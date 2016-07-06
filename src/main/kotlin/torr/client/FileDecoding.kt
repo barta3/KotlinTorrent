@@ -65,6 +65,6 @@ class TorrentDecoder {
 }
 
 fun main(args: Array<String>) {
-    print(TorrentDecoder().decode(File("""/home/adrian/Downloads/Enty.torrent""")))
+    print(TorrentDecoder().decode(File("""/home/adrian/Downloads/1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_archive.torrent""")))
 
 }

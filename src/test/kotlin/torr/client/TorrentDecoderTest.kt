@@ -14,26 +14,34 @@ class TorrentDecoderTest {
     fun decode() {
 
         val classLoader = javaClass.classLoader
-        val file = File(classLoader.getResource("Multifile.torrent")!!.file)
+        val file = File(classLoader.getResource("1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_archive.torrent")!!.file)
 
         val result = TorrentDecoder().decode(file)
 
-        assertEquals("http://tracker.mininova.org/announce", result.announce)
-        assertEquals("Auto-generated torrent by Mininova.org CD", result.comment)
-        assertEquals(1453201198, result.creation_date)
+        assertEquals("http://bt1.archive.org:6969/announce", result.announce)
+
+        val expectedComment = """
+        |This content hosted at the Internet Archive at https://archive.org/details/1999-04-16.paf.sbd.unknown.10169.sbeok.flacf
+        |Files may have changed, which prevents torrents from downloading correctly or completely; please check for an updated torrent at https://archive.org/download/1999-04-16.paf.sbd.unknown.10169.sbeok.flacf/1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_archive.torrent
+        |Note: retrieval usually requires a client that supports webseeding (GetRight style).
+        |Note: many Internet Archive torrents contain a 'pad file' directory. This directory and the files within it may be erased once retrieval completes.
+        |Note: the file 1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_meta.xml contains metadata about this torrent's contents.""".trimMargin()
+
+        assertEquals(expectedComment, result.comment)
+        assertEquals(1465563615, result.creation_date)
 
 
-        assertEquals(19, result.info.files.size)
+        assertEquals(142, result.info.files.size)
 
-        assertEquals(7602896, result.info.files[0].length)
-        assertEquals(listOf("01 Enty3way Finger Bang Me - Enty3way The God.mp3"), result.info.files[0].path)
+        assertEquals(2802, result.info.files[0].length)
+        assertEquals(listOf("1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_meta.xml"), result.info.files[0].path)
 
-        assertEquals(74101, result.info.files[18].length)
-        assertEquals(listOf("Lyrics by Enty3way The God Delusions Of Grandeur.pdf"), result.info.files[18].path)
+        assertEquals(32437, result.info.files[18].length)
+        assertEquals(listOf("pf99-04-16d1t02_esslow.json.gz"), result.info.files[18].path)
 
-        assertEquals("Enty3way The God - Delusions of Grandeur", result.info.name)
+        assertEquals("1999-04-16.paf.sbd.unknown.10169.sbeok.flacf", result.info.name)
         assertEquals(1048576, result.info.piece_length)
-        assertEquals(1873, result.info.pieces.length)
+        assertEquals(25271, result.info.pieces.length)
     }
 
 }
