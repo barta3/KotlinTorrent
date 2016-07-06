@@ -1,0 +1,31 @@
+{ 
+"announce": "http://tracker.mininova.org/announce", 
+"comment": "Auto-generated torrent by Mininova.org CD", 
+"creation date": 1453201198, 
+"info": { 
+	"files": [ 
+		{ "length": 7602896, "path": [ "01 Enty3way Finger Bang Me - Enty3way The God.mp3" ] }, 
+		{ "length": 7283157, "path": [ "02 Return Of The Shepard - Enty3way The God Ft Victoria Hammond.mp3" ] }, 
+		{ "length": 5549672, "path": [ "03 Seven Guns No Sons - Enty3way The God.mp3" ] }, 
+		{ "length": 8322831, "path": [ "04 1 - Enty3way The God Ft Victoria Hammond.mp3" ] }, 
+		{ "length": 6936251, "path": [ "05 Camile - Enty3way The God.mp3" ] }, 
+		{ "length": 9069933, "path": [ "06 As Long As I Have Got You - Enty3way The God.mp3" ] }, 
+		{ "length": 6003157, "path": [ "07 Enjoy Yourself - Enty3way The God.mp3" ] }, 
+		{ "length": 7496317, "path": [ "08 The God - Enty3way The God.mp3" ] }, 
+		{ "length": 6167206, "path": [ "09 Summer 1989 - Enty3way The God.mp3" ] }, 
+		{ "length": 5656251, "path": [ "10 You  I Part IV - Enty3way The God.mp3" ] }, 
+		{ "length": 6723092, "path": [ "11 Ooooooohhh - Enty3way The God.mp3" ] }, 
+		{ "length": 7216284, "path": [ "12 God Is All You Wanted - Enty3way.mp3" ] }, 
+		{ "length": 4482831, "path": [ "13 Delusions of Grandeur - Enty3way The God.mp3" ] }, 
+		{ "length": 6723092, "path": [ "14 All You Need Right Here - Enty3way The God.mp3" ] }, 
+		{ "length": 7767990, "path": [ "15 I Forgive You - Enty3way The God Ft Victoria Hammond.mp3" ] }, 
+		{ "length": 395640, "path": [ "Album Cover.jpg" ] }, 
+		{ "length": 17593, "path": [ "Album Information Enty3way The God - Delusions of Grandeur.pdf" ] }, 
+		{ "length": 291, "path": [ "Distributed by Mininova.txt" ] }, 
+		{ "length": 74101, "path": [ "Lyrics by Enty3way The God Delusions Of Grandeur.pdf" ] } 
+	], 
+	"name": "Enty3way The God - Delusions of Grandeur", 
+	"piece length": 1048576, 
+	"pieces": "(1980 bytes)" 
+	} 
+}
