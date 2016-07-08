@@ -2,8 +2,8 @@ package torr.client
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.File
 import java.nio.file.Files
-import java.nio.file.Paths
 import java.security.MessageDigest
 
 /**
@@ -14,9 +14,9 @@ class NetworkingKtTest {
     fun buildTrackerUrl() {
 
 
-        val path = Paths.get("/home/adrian/IdeaProjects/BittorrentClient/src/test/resources/info.b")
-        val infoBlockInBytes = Files.readAllBytes(path)
-
+        val classLoader = javaClass.classLoader
+        val file = File(classLoader.getResource("info.b")!!.file)
+        val infoBlockInBytes = Files.readAllBytes(file.toPath())
 
         assertEquals(52308, infoBlockInBytes.size)
 
