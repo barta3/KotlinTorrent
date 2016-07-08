@@ -1,9 +1,8 @@
 package torr.client
 
 import main.kotlin.torr.client.TorrentDecoder
+import org.junit.Assert.assertEquals
 import org.junit.Test
-
-import org.junit.Assert.*
 import java.io.File
 
 /**
@@ -32,6 +31,7 @@ class TorrentDecoderTest {
 
 
         assertEquals(142, result.info.files.size)
+        assertEquals(1402626825, result.calculateTotalSize()) // ~1.4 GB
 
         assertEquals(2802, result.info.files[0].length)
         assertEquals(listOf("1999-04-16.paf.sbd.unknown.10169.sbeok.flacf_meta.xml"), result.info.files[0].path)

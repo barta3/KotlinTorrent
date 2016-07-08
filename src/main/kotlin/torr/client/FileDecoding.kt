@@ -10,7 +10,6 @@ import java.io.FileInputStream
 
 class TorrentDecoder {
 
-
     fun decode(file: File): TorrentFile {
         val decoder = BDecoder(FileInputStream(file))
         val document = decoder.decodeMap()
@@ -49,7 +48,9 @@ class TorrentDecoder {
             val comment: String,
             val creation_date: Int,
             val info: TorrentInfo
-    )
+    ) {
+        fun calculateTotalSize() =  info.files.sumBy { it.length }
+    }
 
     data class TorrentInfo(
             val piece_length: Int,
