@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
  * handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
  */
 class HandshakeMessage {
-    // handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
+    val LOG by lazyLogger()
 
     fun decode(input: DataInputStream): HandShake {
 
@@ -31,7 +31,7 @@ class HandshakeMessage {
         }
 
         val msgLen = 49+pstrlen!!
-        println("Handshake msg len: $msgLen")
+        LOG.info("Handshake msg len: $msgLen")
 
         if (pstrlen != 19.toByte()) {
             throw IllegalStateException("pstrlen in peer Handshake response is not 19, but $pstrlen")
@@ -51,7 +51,7 @@ class HandshakeMessage {
         val peerId = b.slice(48..67).toByteArray()
 
         val hs = HandShake(pstrlen.toInt(), String(pstr), reserved, infoHash, String(peerId))
-        println(hs)
+        LOG.info(hs.toString())
         return hs
 
     }
