@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit
 
 class MessageReceiver(val peer: Peer) {
 
+    val LOG by lazyLogger()
+
     fun decodeIncomingMessage() {
 
         var len = -1
@@ -22,6 +24,8 @@ class MessageReceiver(val peer: Peer) {
                 // No Data available
             }
         }
+
+        if(len > 100) println("!!BIG MSG")
 
 
         if (len == 0) {
@@ -88,5 +92,5 @@ class MessageReceiver(val peer: Peer) {
         }
     }
 
-    private fun log(msg: String) = println("MessageReceiver for ${peer.ipAddr}: $msg")
+    private fun log(msg: String) = LOG.info("MessageReceiver for ${peer.ipAddr}: $msg")
 }
