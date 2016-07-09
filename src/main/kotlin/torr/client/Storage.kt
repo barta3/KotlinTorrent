@@ -25,9 +25,17 @@ object Storage {
     }
 
     fun setAvailable(id: Int, peerId: String) {
-        println("Storage setAvailable piece $id peerId $peerId")
-        pieces[id].state = PieceState.AVAILABLE
-        pieces[id].peerIp = peerId
+        setPieceTo(id, PieceState.AVAILABLE, peerId)
+    }
+
+    fun setRequested(id: Int, peerId: String) {
+        setPieceTo(id, PieceState.REQUESTED, peerId)
+    }
+
+    private fun setPieceTo(pieceId: Int, state: PieceState, peerId: String) {
+        println("Storage piece $pieceId to $state for $peerId")
+        pieces[pieceId].state = state
+        pieces[pieceId].peerIp = peerId
     }
 
 }
@@ -39,5 +47,5 @@ data class Piece(val id: Int,
 )
 
 enum class PieceState {
-    TODO, REQUESTED, AVAILABLE, COMPLETE,
+    TODO, REQUESTED, AVAILABLE, DOWNLOADING, COMPLETE,
 }
