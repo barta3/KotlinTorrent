@@ -1,11 +1,7 @@
 package torr.client
 
-import be.adaxisoft.bencode.BDecoder
-import nl.komponents.kovenant.task
 import java.io.DataInputStream
 import java.io.EOFException
-import java.io.InputStream
-import java.net.ConnectException
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -23,32 +19,16 @@ class HandshakeMessage {
     fun decode(input: DataInputStream): HandShake {
 
 
-//        var len = (-1).toByte()
-//        try {
-//            val len = input.readByte()
-//        } catch (eof: EOFException) {
-//            // No Data available
-//
-//        }
-
-
         var pstrlen:Byte? = null
 
-//        try {
-//            pstrlen = input.readByte()
-//        } catch (eof : EOFException) {
-//            // Nothing to read
-//
-//        }
-
         while(pstrlen == null) {
+            TimeUnit.MILLISECONDS.sleep(500)
             try {
                 pstrlen = input.readByte()
             } catch (eof : EOFException) {
                 // Nothing to read
             }
         }
-//        val pstrlen = input.readByte()
 
         val msgLen = 49+pstrlen!!
         println("Handshake msg len: $msgLen")
@@ -166,7 +146,7 @@ class HaveMessage {
 
     fun encode(pieceIndex: Int): ByteArray {
         val buffer = ByteBuffer.allocate(9)
-        buffer.put(ByteArray(4))
+        buffer.putInt(5)
         buffer.put(MSG_ID)
         buffer.putInt(pieceIndex)
         return buffer.array()
@@ -214,7 +194,7 @@ class RequestMessage {
 
     fun encode(pieceIndex: Int, begin: Int, length: Int = 16384): ByteArray {
         val buffer = ByteBuffer.allocate(17)
-        buffer.put(ByteArray(4))
+        buffer.putInt(13)
         buffer.put(MSG_ID)
         buffer.putInt(pieceIndex)
         buffer.putInt(begin)
@@ -235,7 +215,7 @@ class PieceMessage {
 
     fun encode(pieceIndex: Int, begin: Int, block: ByteArray): ByteArray {
         val buffer = ByteBuffer.allocate(17) //TODO
-        buffer.put(ByteArray(4))
+        buffer.putInt(9+block.size)
         buffer.put(MSG_ID)
         buffer.putInt(pieceIndex)
         buffer.putInt(begin)
@@ -256,7 +236,7 @@ class CancelMessage {
 
     fun encode(pieceIndex: Int, begin: Int, length: Int): ByteArray {
         val buffer = ByteBuffer.allocate(9)
-        buffer.put(ByteArray(4))
+        buffer.putInt(13)
         buffer.put(MSG_ID)
         buffer.putInt(pieceIndex)
         buffer.putInt(begin)
@@ -265,103 +245,6 @@ class CancelMessage {
     }
 }
 
-
-fun parseTrackerResponse(ins: InputStream, infoHash: ByteArray) {
-    val map = BDecoder(ins).decodeMap().map
-    println(map)
-    ins.close()
-
-    val response = TrackerResponse(
-            failure_reason = map["failure reason"]?.string,
-            warning_message = map["warning message"]?.string,
-            interval = map["interval"]?.int,
-            min_interval = map["min interval"]?.int,
-            tracker_id = map["tracker id"]?.string,
-            complete = map["complete"]?.int,
-            incomplete = map["incomplete"]?.int,
-            peers = map["peers"]?.bytes
-    )
-
-    println("Tracker response: " + response)
-
-    if (response.failure_reason != null) {
-        println("FAILED: ${response.failure_reason}")
-        return
-    }
-
-    if (response.warning_message != null) {
-        println("WARNING: ${response.warning_message}")
-    }
-
-    val peers = response.peers!!
-
-    var value: Long = 0
-    for (i in 0..peers.size - 1) {
-        value = (value shl 8) + (peers[i].toInt() and 0xff)
-    }
-
-    for (i in peers.indices) {
-        if (i % 6 != 0) continue
-
-        val ipAddr = "${(peers[i].toInt() and 0xff)}.${(peers[i + 1].toInt() and 0xff)}.${(peers[i + 2].toInt() and 0xff)}.${(peers[i + 3].toInt() and 0xff)}"
-
-        if (ipAddr == "178.195.191.249") continue // It's me
-
-        val port1 = (peers[i + 4].toInt() and 0xff)
-        val port2 = (peers[i + 5].toInt() and 0xff)
-
-        // http://stackoverflow.com/questions/1026761/how-to-convert-a-byte-array-to-its-numeric-value-java
-//        val port = (peers[i+4].toInt() and 0xFF shl 8) or (peers[i+5].toInt() and 0xFF)
-        val port = (port1 * 256) + port2
-
-        println("Peer Info from Tracker[${i / 6 + 1} / ${peers.size / 6}]: $ipAddr : $port")
+data class PeerResult(val ip: String, val port:Int, val infoHash: ByteArray)
 
 
-        // TODO: send / receive only after successfull connect
-
-        val init = task {
-            println("TASK Setup start")
-            val peer = Peer(ipAddr)
-            try {
-                peer.setUpConnection(ipAddr, port, infoHash)
-//                peer.handshake(infoHash)
-            } catch (c : ConnectException) {
-                c.printStackTrace()
-            }
-
-            println("TASK Setup end")
-            peer
-        } fail {
-            print("FAIL")
-        }
-
-        val peer = init.get()
-
-
-        println("success ${peer.ipAddr}")
-
-        task {
-            while (true) {
-//                println("REC")
-                TimeUnit.SECONDS.sleep(1)
-                MessageReceiver(peer).decodeIncomingMessage()
-
-
-            }
-        }
-
-        task {
-            while (true) {
-//                println("SEND")
-                TimeUnit.SECONDS.sleep(1)
-                MessageSender(peer).sendMessage()
-
-
-
-            }
-        }
-
-    }
-
-
-}
