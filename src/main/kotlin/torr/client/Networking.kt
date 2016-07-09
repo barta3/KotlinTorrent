@@ -4,6 +4,7 @@ import main.kotlin.torr.client.TorrentDecoder
 import org.apache.http.client.utils.URIBuilder
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.EOFException
 import java.net.HttpURLConnection
 import java.net.Socket
 import java.net.URL
@@ -38,51 +39,154 @@ fun connectToTracker(torrentFile: TorrentDecoder.TorrentFile, info: ByteArray) {
 
 }
 
-class PeerHandler(val ipAddr: String, val port: Int, val infoHash: ByteArray) : Runnable {
+class Peer(val ipAddr: String) { //TODO: change to id
 
-    override fun run() {
-        handShakeWithPeer(ipAddr, port, infoHash)
+    var am_choking = true
+    var am_interested = false
+    var peer_choking = true
+    var peer_interested = false
+
+    // TODO: better initialisation / null handling / lazy?
+    var dataInputStream: DataInputStream? = null
+    var dataOutputStream: DataOutputStream? = null
+
+    fun setUpConnection(peerIp: String, peerPort: Int, infoHash: ByteArray) {
+
+        log("Connecting...")
+        val socket = Socket(peerIp, peerPort)
+
+        log("Connected")
+
+        dataInputStream = DataInputStream(socket.inputStream)
+        dataOutputStream = DataOutputStream(socket.outputStream)
+
+        handshake(infoHash)
     }
+
+    private fun handshake(infoHash: ByteArray) : Boolean {
+
+        dataOutputStream!!.write(HandshakeMessage().encode(HandShake(infoHash = infoHash)))
+        val handShakeResult = HandshakeMessage().decode(dataInputStream!!)
+
+        log("Infohash Check: : ${Arrays.equals(infoHash, handShakeResult.infoHash)}")
+
+        return Arrays.equals(infoHash, handShakeResult.infoHash)
+    }
+
+    private fun log(msg: String) = println("Peer ${ipAddr}: $msg")
+
 }
 
-fun handShakeWithPeer(peerIp: String, peerPort: Int, infoHash: ByteArray) {
-    // handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
 
-    println("Handshake with $peerIp : $peerPort")
+class MessageReceiver(val peer: Peer) {
 
-    (Socket(peerIp, peerPort)).use {
+    fun decodeIncomingMessage() {
 
-        println("connected")
-
-        val input = DataInputStream(it.inputStream)
-        val output = DataOutputStream(it.outputStream)
-
-        val handShakeMsg = HandshakeMessage().encode(HandShake(19, "BitTorrent protocol", ByteArray(8), infoHash, PEER_ID))
-        output.write(handShakeMsg)
-
-        println(output.size())
+        var len = (-1).toByte()
 
 
-        println("Decoding handshake from $peerIp")
-        val hres = HandshakeMessage().decode(input)
+        while(len < 0) {
+            try {
+                len = peer.dataInputStream!!.readByte()
+            } catch (eof : EOFException) {
+                // No Data available
+            }
+        }
 
-        println("Handshake Response from $peerIp: $hres")
-        println("Infohash Check: : ${Arrays.equals(infoHash , hres.infoHash)}")
+        var msgType: Byte = (-1).toByte()
 
-        if(!Arrays.equals(infoHash , hres.infoHash)) {
-            throw IllegalStateException("Infohash Check not OK!")
+        if (len != 0.toByte()) {
+            msgType = peer.dataInputStream!!.readByte()
+        }
+
+
+        log("decodeIncomingMessage: len: $len Type: $msgType")
+
+        when (msgType) {
+            ((-1).toByte()) -> log("Keepalive")
+
+            (ChockedMessage().MSG_ID) -> {
+                log("ChockedMessage")
+                peer.peer_choking = true
+            }
+            (UnChockedMessage().MSG_ID) -> {
+                log("UnChockedMessage")
+                peer.peer_choking = false
+            }
+            (InterestedMessage().MSG_ID) -> {
+                log("InterestedMessage")
+                peer.peer_interested = true
+            }
+            (NotInterestedMessage().MSG_ID) -> {
+                log("NotInterestedMessage")
+                peer.peer_interested = false
+            }
+            (HaveMessage().MSG_ID) -> {
+
+                val piece_index = HaveMessage().decode(peer.dataInputStream!!)
+                Storage.setAvailable(piece_index, peer.ipAddr)
+                log("HaveMessage: piece_index $piece_index")
+            }
+            (BitFieldMessage().MSG_ID) -> {
+
+                val bitfield = BitFieldMessage().decode(peer.dataInputStream!!, len - 1)
+                log("BitFieldMessage: $bitfield, bflen: ${bitfield.size}")
+            }
+            (RequestMessage().MSG_ID) -> {
+                log("RequestMessage TODO")
+            }
+            (PieceMessage().MSG_ID) -> {
+                log("PieceMessage TODO")
+            }
+            (CancelMessage().MSG_ID) -> {
+                log("CancelMessage")
+            }
+
+            else -> log("Unknown Message Type received")
+        }
+    }
+
+    private fun log(msg: String) = println("MessageReceiver for ${peer.ipAddr}: $msg")
+}
+
+class MessageSender(val peer: Peer) {
+
+    fun sendMessage() {
+
+
+        // 1 Send Interested, expect Unchocke
+        if (peer.am_choking && !peer.am_interested && peer.peer_choking && !peer.peer_interested) {
+            log("Sending InterestedMessage")
+            peer.dataOutputStream!!.write(InterestedMessage().encode())
+
+            // 2 Send Request, expect Piece
+        } else if (peer.am_choking && !peer.am_interested && !peer.peer_choking && !peer.peer_interested) {
+
+            log("Prepare RequestMessage ")
+            val pieceToGet = Storage.getNextAvailable(peer.ipAddr)
+
+            if (pieceToGet == null) {
+                return
+            }
+
+            val msg = RequestMessage().encode(pieceIndex = pieceToGet, begin = 0)
+            log("Sent RequestMessage: for piece $pieceToGet")
+            peer.dataOutputStream!!.write(msg)
+        } else {
+//            log("Don't know shat to send  am_choking:$am_choking am_interested:$am_interested peer_choking:$peer_choking peer_interested:$peer_interested") //TODO
         }
 
     }
 
+    private fun log(msg: String) = println("MessageSender for ${peer.ipAddr}: $msg")
 }
 
 data class HandShake(
-        val pstrlen: Int,
-        val pstr: String,
-        val reserved: ByteArray,
+        val pstrlen: Int = 19,
+        val pstr: String = "BitTorrent protocol",
+        val reserved: ByteArray = ByteArray(8),
         val infoHash: ByteArray,
-        val peerId: String
+        val peerId: String = PEER_ID
 )
 
 data class TrackerResponse(
