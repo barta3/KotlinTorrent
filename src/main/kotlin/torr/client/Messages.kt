@@ -209,8 +209,13 @@ class RequestMessage {
 class PieceMessage {
     val MSG_ID = 7.toByte()
 
-    fun decode(bytes: ByteArray) {
-        if (bytes.size < 13 || bytes[4] != MSG_ID) throw IllegalArgumentException("Invalid PieceMessage")
+    fun decode(inputStream: DataInputStream, blockLen: Int): Piece {
+
+        val pieceIndex = inputStream.readInt()
+        val begin = inputStream.readInt()
+        val block = ByteArray(blockLen)
+        inputStream.readFully(block)
+        return Piece(pieceIndex, begin, block)
     }
 
     fun encode(pieceIndex: Int, begin: Int, block: ByteArray): ByteArray {
@@ -223,6 +228,8 @@ class PieceMessage {
         return buffer.array()
     }
 }
+
+data class Piece(val index: Int, val begin: Int, val block: ByteArray)
 
 /**
  * cancel: <len=0013><id=8><index><begin><length>

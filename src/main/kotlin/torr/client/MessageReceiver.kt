@@ -82,13 +82,17 @@ class MessageReceiver(val peer: Peer) {
                 log("RequestMessage TODO")
             }
             (PieceMessage().MSG_ID) -> {
-                log("PieceMessage TODO")
+                log("PieceMessage Received")
+                val piece = PieceMessage().decode(peer.dataInputStream!!, len - 9)
+                log("Piece Decoded: $piece")
+                Storage.setDownloaded(piece.index, peer.ipAddr, piece.block)
+                log("Download Complete for Piece: $piece")
             }
             (CancelMessage().MSG_ID) -> {
                 log("CancelMessage")
             }
 
-            else -> log("Unknown Message Type received")
+            else -> LOG.warning("Unknown Message Type received: $msgType")
         }
     }
 
