@@ -44,6 +44,8 @@ class Client {
 //    Files.write(path, bytes)
 
         Tracker().connectToTracker(torrent, bytes)
+
+        Storage.init(torrent)
     }
 
 }

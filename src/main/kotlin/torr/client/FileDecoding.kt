@@ -50,6 +50,15 @@ class TorrentDecoder {
             val info: TorrentInfo
     ) {
         fun calculateTotalSize() =  info.files.sumBy { it.length }
+
+        fun getFileByPieceIndex(pieceIndex : Int) : File {
+            val r = pieceIndex * 16384 // blocksize
+
+            val path = info.files.takeWhile { info.files.sumBy { it.length } < r }.first().path
+
+            println("piece Inde: $pieceIndex / File to write: $path")
+            return File(path[0])
+        }
     }
 
     data class TorrentInfo(

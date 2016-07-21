@@ -1,13 +1,16 @@
 package torr.client
 
+import main.kotlin.torr.client.TorrentDecoder
+import nl.komponents.kovenant.task
+
 /**
  * Created by adrian on 08.07.16.
  */
 
 object Storage {
 
-
-    private val pieces = Array<Piece>(100, { i -> Piece(i, PieceState.TODO, null) })
+    private val pieces = Array<StoragePiece>(100, { i -> StoragePiece(i, PieceState.TODO, null) })
+    private var t : TorrentDecoder.TorrentFile? = null
 
     fun getNextAvailable(peerIp: String): Int? {
 
@@ -32,20 +35,39 @@ object Storage {
         setPieceTo(id, PieceState.REQUESTED, peerId)
     }
 
+    fun setDownloaded(id: Int, peerId: String, data: ByteArray?) {
+        setPieceTo(id, PieceState.DOWNLOADED, peerId)
+        pieces[id].data = data
+
+        task {
+            // write file
+            // 1. find path from decoded torrent
+            // 2. write bytes with correct offset
+            println("Searching for File for piece $id")
+            val f = t!!.getFileByPieceIndex(id)
+        }
+    }
+
+
+
     private fun setPieceTo(pieceId: Int, state: PieceState, peerId: String) {
         println("Storage piece $pieceId to $state for $peerId")
         pieces[pieceId].state = state
         pieces[pieceId].peerIp = peerId
     }
 
+    fun  init(torrent: TorrentDecoder.TorrentFile) {
+        t = torrent
+    }
+
 }
 
-data class Piece(val id: Int,
+data class StoragePiece(val id: Int,
                  var state: PieceState,
-                 val data: ByteArray?,
+                 var data: ByteArray?,
                  var peerIp: String = ""
 )
 
 enum class PieceState {
-    TODO, REQUESTED, AVAILABLE, DOWNLOADING, COMPLETE,
+    TODO, REQUESTED, AVAILABLE, DOWNLOADED, FILE
 }
